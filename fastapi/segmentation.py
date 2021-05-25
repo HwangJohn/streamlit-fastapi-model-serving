@@ -17,7 +17,7 @@ def get_segmentator():
     return model
 
 
-def get_segments(model, binary_image, max_size=512):
+def get_segments(model=None, binary_image=None, max_size=512):
 
     input_image = Image.open(io.BytesIO(binary_image)).convert("RGB")
     width, height = input_image.size
