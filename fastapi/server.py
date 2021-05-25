@@ -6,11 +6,14 @@ from starlette.responses import Response, JSONResponse
 from fastapi import FastAPI, File
 
 import multiprocessing as mp
+import concurrent
 from functools import partial
 from PIL import Image
 import json
 import base64
 import numpy as np
+import copy
+import time
 
 model0 = get_segmentator()
 model1 = get_segmentator()
@@ -31,6 +34,7 @@ app = FastAPI(
 @app.post("/segmentation")
 def get_segmentation_map(file: bytes = File(...)):
     """Get segmentation maps from image file"""
+    tic = time.clock()
 
     response_dict = dict()
 
@@ -39,13 +43,20 @@ def get_segmentation_map(file: bytes = File(...)):
     response_dict[0] = np.array(segmented_img).tolist()
 
     # 각 테스크
-    get_segments_for_mp = partial(get_segments, binary_image=file)
-    with mp.Pool() as p:
-        segmented_images = p.map(get_segments_for_mp, models[1:])
+    get_segments_for_mp = partial(get_segments, binary_image=copy.deepcopy(file))
+    # pool = mp.Pool(5)
+    # for n in range(5):
+    #      segmented_images = pool.map(get_segments_for_mp, models[1:])
+    # pool.close()
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
+       segmented_images = executor.map(get_segments_for_mp, models[1:])    
 
     for idx, img in enumerate(segmented_images):
         response_dict[idx+1] = np.array(img).tolist()
 
+    toc = time.clock()
+    print(toc - tic)
     return JSONResponse(json.dumps(response_dict), media_type="application/json")
 
     # bytes_io = io.BytesIO()
