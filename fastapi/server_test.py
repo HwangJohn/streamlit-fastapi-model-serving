@@ -1,9 +1,9 @@
 import io
 
 from segmentation import get_segmentator, get_segments
-from starlette.responses import Response, JSONResponse
+#from starlette.responses import Response, JSONResponse
 
-from fastapi import FastAPI, File
+#from fastapi import FastAPI, File
 
 import multiprocessing as mp
 import concurrent
@@ -23,16 +23,16 @@ model4 = get_segmentator()
 model5 = get_segmentator()
 models = [model0, model1, model2, model3, model4, model5]
 
-app = FastAPI(
-    title="DeepLabV3 image segmentation",
-    description="""Obtain semantic segmentation maps of the image in input via DeepLabV3 implemented in PyTorch.
-                           Visit this URL at port 8501 for the streamlit interface.""",
-    version="0.1.0",
-)
+# app = FastAPI(
+#     title="DeepLabV3 image segmentation",
+#     description="""Obtain semantic segmentation maps of the image in input via DeepLabV3 implemented in PyTorch.
+#                            Visit this URL at port 8501 for the streamlit interface.""",
+#     version="0.1.0",
+# )
 
 
-@app.post("/segmentation")
-def get_segmentation_map(file: bytes = File(...)):
+# @app.post("/segmentation")
+def get_segmentation_map(file: bytes):
     """Get segmentation maps from image file"""
     tic = time.clock()
 
