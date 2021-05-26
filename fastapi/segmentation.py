@@ -9,12 +9,14 @@ import numpy as np
 
 # adapted from https://pytorch.org/hub/pytorch_vision_deeplabv3_resnet101/
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_segmentator():
 
     model = torch.hub.load(
         "pytorch/vision:v0.6.0", "deeplabv3_resnet101", pretrained=True
     )
+    model.to(device)
     model.eval()
 
     return model
@@ -55,7 +57,7 @@ def get_segments(model=None, binary_image=None, max_size=512):
     t_input_batchs = torch.stack(input_batchs)
 
     with torch.no_grad():
-        output = model(t_input_batchs)["out"]
+        output = model(t_input_batchs.to(device))["out"]
 
     output_predictions = output.argmax(1)
 
