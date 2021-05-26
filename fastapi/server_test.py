@@ -5,7 +5,12 @@ from segmentation import get_segmentator, get_segments
 
 #from fastapi import FastAPI, File
 
-import multiprocessing as mp
+from torch.multiprocessing import Pool, Process, set_start_method
+try:
+     set_start_method('spawn')
+except RuntimeError:
+    pass
+
 import concurrent
 from functools import partial
 from PIL import Image
@@ -14,6 +19,8 @@ import base64
 import numpy as np
 import copy
 import time
+
+tic0 = time.clock()
 
 model0 = get_segmentator()
 model1 = get_segmentator()
@@ -48,7 +55,8 @@ def get_segmentation_map(file: bytes):
     # for n in range(5):
     #      segmented_images = pool.map(get_segments_for_mp, models[1:])
     # pool.close()
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
+    #with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
+    with Pool(5) as pool:
         segmented_images = pool.map(get_segments_for_mp, models[1:])
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
@@ -70,11 +78,7 @@ def get_segmentation_map(file: bytes):
 
     toc = time.clock()
     print(toc - tic)
-    return JSONResponse(json.dumps(response_dict), media_type="application/json")
-
-    # bytes_io = io.BytesIO()
-    # segmented_image.save(bytes_io, format="PNG")
-    # return Response(bytes_io.getvalue(), media_type="image/png")
+    return response_dict
 
 if __name__ == "__main__":
     img = Image.open("headPoseRight.jpg")
@@ -84,8 +88,10 @@ if __name__ == "__main__":
     # result = get_segments(model0, img_byte_arr)
     results = get_segmentation_map(img_byte_arr)
 
-    result_dict = json.loads(json.loads(results.body.decode()))
-    print(result_dict.keys())
+    #result_dict = json.loads(json.loads(results.body.decode()))
+    #print(result_dict.keys())
+    toc0 = time.clock()
+    print(toc0 - tic0)
 
     # print(img_byte_arr)
     # get_segmentation_map()
