@@ -19,8 +19,9 @@ import base64
 import numpy as np
 import copy
 import time
+from datetime import datetime
 
-tic0 = time.clock()
+tic0 = datetime.now()
 
 model0 = get_segmentator()
 model1 = get_segmentator()
@@ -41,24 +42,25 @@ models = [model0, model1, model2, model3, model4, model5]
 # @app.post("/segmentation")
 def get_segmentation_map(file: bytes):
     """Get segmentation maps from image file"""
-    tic = time.clock()
-
+    tic1 = datetime.now()
+    print(f"seg start: {tic1-tic0}")
     response_dict = dict()
 
     # 비식별화 
     segmented_img = get_segments(model=models[0], binary_image=file)
     response_dict[0] = np.array(segmented_img).tolist()
+    toc_pre = datetime.now()
+    print(f"pre model: {toc_pre - tic1}")
 
     # 각 테스크
-    get_segments_for_mp = partial(get_segments, binary_image=copy.deepcopy(file))
-    # pool = mp.Pool(5)
-    # for n in range(5):
-    #      segmented_images = pool.map(get_segments_for_mp, models[1:])
-    # pool.close()
-    #with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
-    with Pool(5) as pool:
-        segmented_images = pool.map(get_segments_for_mp, models[1:])
-
+    segmented_images = []
+    for idx in range(len(models)-1):
+        segmented_images.append(get_segments(model=models[idx+1], binary_image=file))
+    #get_segments_for_mp = partial(get_segments, binary_image=copy.deepcopy(file))
+    #with Pool(5) as pool:
+    #    segmented_images = pool.map(get_segments_for_mp, models[1:])
+    #for idx in range(len(models)-1):
+    #    segmented_images.append(get_segments(model=models[idx+1], binary_image=file))
     # with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
     #     futures = [
     #         pool.submit(get_segments_for_mp, models[1]),
@@ -76,8 +78,10 @@ def get_segmentation_map(file: bytes):
     for idx, img in enumerate(segmented_images):
         response_dict[idx+1] = np.array(img).tolist()
 
-    toc = time.clock()
-    print(toc - tic)
+    toc = datetime.now()
+    print(f"multi infer: {toc - toc_pre}")
+    print(f"infer total: {toc - tic1}")
+
     return response_dict
 
 if __name__ == "__main__":
@@ -90,8 +94,8 @@ if __name__ == "__main__":
 
     #result_dict = json.loads(json.loads(results.body.decode()))
     #print(result_dict.keys())
-    toc0 = time.clock()
-    print(toc0 - tic0)
+    toc0 = datetime.now()
+    print(f"total elapsed : {toc0 - tic0}")
 
     # print(img_byte_arr)
     # get_segmentation_map()

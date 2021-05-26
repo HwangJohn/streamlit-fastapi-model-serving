@@ -5,7 +5,7 @@ from starlette.responses import Response, JSONResponse
 
 from fastapi import FastAPI, File
 
-import multiprocessing as mp
+from torch.multiprocessing import Pool, Process, set_start_method
 import concurrent
 from functools import partial
 from PIL import Image
@@ -48,7 +48,11 @@ def get_segmentation_map(file: bytes = File(...)):
     # for n in range(5):
     #      segmented_images = pool.map(get_segments_for_mp, models[1:])
     # pool.close()
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
+    try:
+         set_start_method('spawn')
+    except RuntimeError:
+        pass
+    with Pool(5) as pool:
         segmented_images = pool.map(get_segments_for_mp, models[1:])
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=5) as pool:
